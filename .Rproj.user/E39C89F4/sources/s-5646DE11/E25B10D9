@@ -3,7 +3,7 @@
     "path": "~/Desktop/Data Science/Homework/p8105_hw6_km3529/p8105_hw6_km3529/p8106_hw6_km3529.Rmd",
     "project_path": "p8106_hw6_km3529.Rmd",
     "type": "r_markdown",
-    "hash": "3181390226",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1607194976147.0,
@@ -11,15 +11,15 @@
     "relative_order": 1,
     "properties": {
         "tempName": "Untitled1",
-        "cursorPosition": "4,23",
-        "scrollLine": "0"
+        "cursorPosition": "123,114",
+        "scrollLine": "118"
     },
     "folds": "",
-    "lastKnownWriteTime": 1607195516,
+    "lastKnownWriteTime": 1607198995,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1607195516393,
+    "last_content_update": 1607198995627,
     "read_only": false,
     "read_only_alternatives": []
 }
