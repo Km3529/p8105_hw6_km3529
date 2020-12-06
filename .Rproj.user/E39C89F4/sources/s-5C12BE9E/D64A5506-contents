@@ -114,17 +114,17 @@ Load and clean the data for regression analysis (i.e. convert numeric to factor 
 
 ```{r}
 baby_df = 
-  read_csv("./data/birthweight.csv") %>% 
+  read.csv("data/birthweight.csv") %>% 
   janitor::clean_names() %>% 
   mutate(
-    frace = as.factor(frace),
-     frace = recode(frace,
-      "1" = "White", 
-      "2" = "Black", 
-      "3" = "Asian", 
-      "4" = "Puerto Rican", 
-      "8" = "Other", 
-      "9" = "Unknown"),
+   frace = as.factor(frace),
+   frace = recode(frace,
+    "1" = "White", 
+    "2" = "Black", 
+    "3" = "Asian", 
+    "4" = "Puerto Rican", 
+    "8" = "Other", 
+    "9" = "Unknown"),
    mrace = as.factor(mrace),
    mrace = recode(mrace, 
     "1" = "White", 
@@ -139,20 +139,10 @@ baby_df =
    malform = as.factor(malform),
    malform = recode(malform,
     "0" = "absent", 
-    "1" = "present"),
-  mutate(
-    babysex = case_when(
-      babysex == "1" ~ "0", 
-      babysex == "2" ~ "1"), 
-    babysex = as.factor(babysex),
-    frace = as.factor(frace), 
-    malfrom = as.factor(malform), 
-    mrace = as.factor(mrace)
-    )) 
-
-anyNA(baby_df)
-
+    "1" = "present")) 
 ```
+
+
 'frace', 'mrace', 'babysex' and 'malform' to factors
 confirmed no missing 
 
