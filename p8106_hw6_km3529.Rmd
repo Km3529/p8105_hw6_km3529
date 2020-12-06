@@ -7,6 +7,8 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(mgcv)
+library(modelr)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -23,6 +25,8 @@ options(
 
 scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
+
+set.seed(1)
 ```
 
 ## Problem 1
@@ -44,6 +48,7 @@ homicide_df =
     victim_race %in% c("White", "Black"),
     city_state != "Tulsa, AL") %>% 
   select(city_state, resolution, victim_age, victim_race, victim_sex)
+
 ```
 
 
@@ -104,42 +109,125 @@ This plot shows the odds ratio of resolution of homicide by arrest comparing mal
 
 ## Problem 2
 
-find some residuals 
 
-build 3 models. tells 2 models. come up with 1. 
-compare 3 models using cross validation. 
-
-interested in birthweight
-
-1) One using length at birth and gestational age as predictors (main effects only)
-2) One using head circumference, length, sex, and all interactions (including the three-way interaction) between these 
-  - R assumes that if you put interaction between 2 var. it assumes you want main effect and adds that (birthweight against head cric times length times sex)
-3) build your own! 
-
-
-how to go about: 
-1) if know have to do cross validation, start with given some model spec, it's possible to do cross validation (go to lecture. look at code. what do you needto change, output, dataset, model structure, model specifiction, output) try to make sure you cna get cross val to work ont his dataset 
-2) just model building. take fulld ataset and thinka bout model you want to propose. start by picking var that might be interesting. look at results. are things significant. look at residuals. 
-3) if can get cross valid ation to work for pre specfied models and then youc an (whatever using what) find collection of variables. then adding new model to cross validation results. 
-There s achance you do all this and model doesn't work as well as 1st, yikes. should be similar or better than 2nd
-
-
+Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
 
 ```{r}
 baby_df = 
-  read_csv("./data/birthweight.csv")
+  read_csv("./data/birthweight.csv") %>% 
+  mutate(
+    babysex = case_when(
+      babysex == "1" ~ "0", 
+      babysex == "2" ~ "1"), 
+    babysex = as.factor(babysex),
+    frace = as.factor(frace), 
+    malfrom = as.factor(malform), 
+    mrace = as.factor(mrace)
+    )
+
 ```
+0 and 1 for baby sex so 0 is male 
+made baby sex, father;s race, mother's race, and presence of malformation factor variables. 
 
-fit a model
 
+
+## Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use add_predictions and add_residuals in making this plot.
+
+
+Compare your model to two others:
+
+1) One using length at birth and gestational age as predictors (main effects only)
 ```{r}
-model_fit = lm(bwt ~ gaweeks, data = baby_df)
+fit = lm(bwt ~ blength + gaweeks, data = baby_df)
+
+fit %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
 ```
 
+residuals
 ```{r}
 baby_df %>% 
-  modelr::add_residuals(model_fit) %>% 
-  ggplot(aes(x = gaweeks, y = resid)) + 
-  geom_point()
+  modelr::add_residuals(fit) %>% 
+  ggplot(aes(x =  blength, y = resid)) + 
+  geom_violin()
+
+baby_df %>% 
+  modelr::add_residuals(fit) %>% 
+  ggplot(aes(x =  gaweeks, y = resid)) + 
+  geom_violin()
 ```
+
+
+
+
+
+2) One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
+```{r}
+fit2 = lm(bwt ~ bhead*blength*babysex, data = baby_df)
+ 
+  
+fit2 %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
+
+
+```
+
+residuals? 
+
+Cross Validation 
+```{r}
+
+## model 1
+fit = lm(bwt ~ blength + gaweeks, data = baby_df)
+
+## model 2
+fit2 = lm(bwt ~ bhead*blength*babysex, data = baby_df)
+
+```
+
+
+convert the resample objects produced by crossv_mc to dataframes, but wouldn’t have to do this if I only wanted to compare the linear and piecewise models.
+```{r}
+cv_df =
+  crossv_mc(baby_df, 100) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+```
+
+Mutate + map & map2 to fit models to training data and obtain corresponding RMSEs for the testing data.
+```{r}
+cv_df = 
+  cv_df %>% 
+  mutate(
+    fit  = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+    fit2 = map(train, ~lm(bhead*blength*babysex, data = .x))) %>% 
+  mutate(
+    fit = map2_dbl(fit, test, ~rmse(model = .x, data = .y)),
+   fit2 = map2_dbl(fit2, test, ~rmse(model = .x, data = .y))) 
+```
+
+Finally, I’ll plot the prediction error distribution for each candidate model.
+
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+```
+
+
+
+
+
+
+
+
 
