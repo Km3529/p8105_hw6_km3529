@@ -146,7 +146,7 @@ When loading the dataset, I converted `frace`, `mrace`, `babysex`, and `malform`
 Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process. 
 
 
-I hypothesized that `blength`, `gaweeks`, `malform`, `mrace`, `fincome`, `smoken`, `parity`, and `pnumlbw` would be in the model. I chose `blength`,  `gaweeks`, and `malform` since are both because they are all related to the development and growth of the baby. I then chose `mrace` and `fincome` because there are socioeconomic disparities with low birthweight, especially with race. I chose mother's race and family income as a way to capture sociodemographic risk factors for low birth weight. I also chose `smoken` since smoking status is another risk factor for low birth weight. Lastly, I choose `parity` and `pnumlbw` since they relate to the mother's gestational history which may impact birth weight. 
+I hypothesized that `blength`, `gaweeks`, `malform`, `mrace`, `fincome`, `smoken`, `parity`, and `pnumlbw` would be in the model. I chose `blength`,  `gaweeks`, and `malform` since they are all related to the development and growth of the baby. I then chose `mrace` and `fincome` because there are socioeconomic disparities with low birthweight, especially with race. I chose mother's race and family income as a way to capture sociodemographic risk factors for low birth weight. I also chose `smoken` since smoking status is another risk factor for low birth weight. Lastly, I choose `parity` and `pnumlbw` since they relate to the mother's gestational history which may impact birth weight. 
 
 I started my model building process with running a simple linear regression of length on birthweight. From there I added the other developmental variables (`gaweeks` and `malform`) by adding them in one by one with an ANOVA. 
 
@@ -313,6 +313,7 @@ cv_results %>%
   ggplot(aes(x = model, y = rmse)) + geom_violin()
 ```
 
+This plot shows that the main model had the highest rmse. The model I created (fit1) had slighyly less rmse. The model with the lowest rmse was the interaction model. 
 
 ## Problem 3
 
@@ -391,19 +392,10 @@ These plots show the distribution of r squared and the log beta estimates. The r
 
 
 Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂ 2and log(β̂0∗β̂1
-```{r}
-# Quantiles
-quantile(weather_2$r.squared, .025) 
-quantile(weather_2$r.squared, .975) 
-
-quantile(weather_2$log_betas, .025)
-quantile(weather_2$log_betas, .975)
-
-````
 
 
 The 95% CI for r^2 is `r quantile(pull(weather_2, r.squared), probs = c(0.025, 0.975))`.
-The 95% CI for log(b0*b1) `r quantile(pull(weather_2, log_betas), probs = c(0.025, 0.975))`.
+The 95% CI for log(b0*b1) is `r quantile(pull(weather_2, log_betas), probs = c(0.025, 0.975))`.
 
 
 
