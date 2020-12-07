@@ -108,7 +108,6 @@ This plot shows the odds ratio of resolution of homicide by arrest comparing mal
 
 ## Problem 2
 
-
 Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
 
 ```{r}
@@ -141,11 +140,15 @@ baby_df =
     "1" = "present")) 
 ```
 
-When loading the dataset, I converted 'frace', 'mrace', 'babysex', and 'malform' to factor variables. 
+When loading the dataset, I converted `frace`, `mrace`, `babysex`, and `malform` to factor variables. 
 
 
-Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use add_predictions and add_residuals in making this plot.
+Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process. 
 
+
+I hypothesized that `blength`, `gaweeks`, `malform`, `mrace`, `fincome`, `smoken`, `parity`, and `pnumlbw` would be in the model. I chose `blength`,  `gaweeks`, and `malform` since are both because they are all related to the development and growth of the baby. I then chose `mrace` and `fincome` because there are socioeconomic disparities with low birthweight, especially with race. I chose mother's race and family income as a way to capture sociodemographic risk factors for low birth weight. I also chose `smoken` since smoking status is another risk factor for low birth weight. Lastly, I choose `parity` and `pnumlbw` since they relate to the mother's gestational history which may impact birth weight. 
+
+I started my model building process with running a simple linear regression of length on birthweight. From there I added the other developmental variables (`gaweeks` and `malform`) by adding them in one by one with an ANOVA. 
 
 ```{r}
 bwt_df = 
@@ -154,7 +157,7 @@ bwt_df =
     mrace = fct_infreq(mrace)) 
 ```
 
-1) blength 
+Baby's length at birth
 ```{r}
 blength_fit = lm(bwt ~ blength, data = bwt_df)
 
@@ -164,7 +167,7 @@ blength_fit %>%
   knitr::kable(digits = 3)
 ```
 
-2) gaweeks
+Gestational Age in Weeks 
 ```{r}
 gaweeks_fit = lm(bwt ~ blength + gaweeks, data = bwt_df)
 
@@ -173,7 +176,7 @@ anova(blength_fit, gaweeks_fit) %>%
   knitr::kable(digits = 3)
 ```
 
-3) malform 
+Presence of malformations that count affect weight 
 ```{r}
 malform_fit = lm(bwt ~ blength + gaweeks + malform, data = bwt_df)
 
@@ -181,9 +184,12 @@ anova(gaweeks_fit, malform_fit) %>%
   broom::tidy() %>% 
   knitr::kable(digits = 3)
 ```
-malform was not significant 
 
-4) mrace 
+
+Length and gestational age in weeks were significant, but malform was not so I did not include that in future models. From here, I repeated the same process with known risk factors for low birth weight
+
+
+Mother's race 
 ```{r}
 mrace_fit = lm(bwt ~ blength + gaweeks + mrace, data = bwt_df) 
 
@@ -192,7 +198,7 @@ anova(gaweeks_fit, mrace_fit) %>%
   knitr::kable(digits = 3)
 ```
 
-5) f income 
+Family Income
 ```{r}
 fincome_fit = lm(bwt ~ blength + gaweeks + mrace + fincome, data = bwt_df) 
 
@@ -202,56 +208,64 @@ anova(mrace_fit, fincome_fit) %>%
 ```
 
 
-6) smoke 
+Average number of cigarettes smoked per day during pregnancy 
 ```{r}
+smoke_fit = lm(bwt ~ blength + gaweeks + mrace + fincome + smoken, data = bwt_df)
+
+anova(fincome_fit, smoke_fit) %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3) 
 
 ```
 
 
+All three of these improved the model. Lastly, I added parity which was significant. I hypothesized that `pnumlbw` would be significant. However, upon examining the data, all the values were 0, so I could not add it to the model. 
 
 
-testmrace 
+Parity 
 ```{r}
-mrace_fit = lm(bwt ~ blength + mrace, data = bwt_df) 
+parity_fit = lm(bwt ~ blength + gaweeks + mrace + fincome + smoken + parity, data = bwt_df)
 
-anova(blength_fit, mrace_fit) %>% 
+anova(smoke_fit, parity_fit) %>% 
   broom::tidy() %>% 
   knitr::kable(digits = 3) 
 ```
 
 
-
-fincome
+I also hypothesized there may be an interaction between length and age so I created an interaction term. This was significant, so I kept it in my model. 
 ```{r}
-income_fit = lm(bwt ~ blength + mrace + gaweeks + fincome, data = bwt_df) 
+fit1 = lm(bwt ~ blength + gaweeks + mrace + fincome + smoken + blength*gaweeks, data = bwt_df) 
 
-anova(gaweeks_fit, )
+fit1 %>% 
+  broom::tidy() %>% 
+  knitr::kable(digits = 3)
 ```
 
 
 
+Show a plot of model residuals against fitted values – use add_predictions and add_residuals in making this plot.
 
+```{r}
+residuals = 
+  bwt_df %>% 
+  modelr::add_residuals(fit1) %>% 
+  modelr::add_predictions(fit1) %>% 
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  labs(title = "Residuals Against Fitted Values")
+residuals
 
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
+There does not appear to be a distinct trend in the plot. There is a large cluster and a slight downward slope. 
 
 
 Compare your model to two others:
 
 1) One using length at birth and gestational age as predictors (main effects only)
 ```{r}
-fit_main = lm(bwt ~ blength + gaweeks, data = baby_df)
+fit_main = lm(bwt ~ blength + gaweeks, data = bwt_df)
 
 fit_main %>% 
   broom::tidy() %>% 
@@ -262,7 +276,7 @@ fit_main %>%
 
 2) One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
 ```{r}
-fit_int = lm(bwt ~ bhead + blength + babysex + bhead*blength + bhead*babysex + blength*babysex + bhead*blength*babysex, data = baby_df) 
+fit_int = lm(bwt ~ bhead + blength + babysex + bhead*blength + bhead*babysex + blength*babysex + bhead*blength*babysex, data = bwt_df) 
       
 
 fit_int %>% 
@@ -272,16 +286,17 @@ fit_int %>%
 ```
 
 
-Cross Validation 
-
+Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate.
 ```{r}
 cv_df = crossv_mc(baby_df, 100)
 cv_results = cv_df %>% 
   mutate(
-    fit1 = map(train, ~lm(bwt ~ blength + gaweeks, data = baby_df)),
-    fit2 = map(train, ~lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex +  bhead * blength * babysex, data = baby_df)),
-    rmse_main = map2_dbl(fit1, test, ~rmse(model = .x, data = .y)),
-    rmse_interact = map2_dbl(fit2, test, ~rmse(model = .x, data = .y))
+    fit1 = map(train, ~lm(bwt ~ blength + gaweeks + mrace + fincome + smoken + blength*gaweeks, data = bwt_df)), 
+    fit2 = map(train, ~lm(bwt ~ blength + gaweeks, data = bwt_df)),
+    fit3 = map(train, ~lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex + blength * babysex +  bhead * blength * babysex, data = bwt_df)),
+    rmse_fit1 = map2_dbl(fit1, test, ~rmse(model = .x, data = .y)), 
+    rmse_main = map2_dbl(fit2, test, ~rmse(model = .x, data = .y)),
+    rmse_interact = map2_dbl(fit3, test, ~rmse(model = .x, data = .y))
   )
 ```
 
@@ -297,8 +312,6 @@ cv_results %>%
   mutate(model = fct_inorder(model)) %>% 
   ggplot(aes(x = model, y = rmse)) + geom_violin()
 ```
-
-
 
 
 ## Problem 3
@@ -324,21 +337,21 @@ The boostrap is helpful when you’d like to perform inference for a parameter /
 r̂2
 log(β̂0∗β̂1)
 
-Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. Plot the distribution of your estimates, and describe these in words. Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂ 2and log(β̂0∗β̂1). Note: broom::glance() is helpful for extracting r̂2
- from a fitted regression, and broom::tidy() (with some additional wrangling) should help in computing log(β̂0∗β̂1).
-
+Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of these two quantities. 
 
 
 ```{r}
 weather_bootstrap = 
   weather_df %>% 
-  modelr::bootstrap(n = 50) %>% 
+  modelr::bootstrap(n = 5000) %>% 
   mutate(
     models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
     results = map(models, broom::tidy),  
     glance = map(models, broom::glance)) %>% 
   unnest(results, glance) %>% 
   select(.id, r.squared, estimate, term)
+
+weather_bootstrap
 ```
 
 
@@ -355,7 +368,9 @@ weather_2 =
   mutate(log_betas = log(b0*b1))
 ```
 
-#r^2 plot 
+
+Plot the distribution of your estimates, and describe these in words. 
+R squared estimated
 ```{r}
 weather_2 %>% 
   ggplot(aes(x = r.squared)) +
@@ -372,9 +387,23 @@ weather_2 %>%
        x = "log(beta0*beta1) estimates")
 ```
 
+These plots show the distribution of r squared and the log beta estimates. The r squared estimates appear to be normally distributed around 0.91. The log(b0*b1)  also appears sto be normally distributed around 2.01. 
 
 
+Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for r̂ 2and log(β̂0∗β̂1
+```{r}
+# Quantiles
+quantile(weather_2$r.squared, .025) 
+quantile(weather_2$r.squared, .975) 
 
+quantile(weather_2$log_betas, .025)
+quantile(weather_2$log_betas, .975)
+
+````
+
+
+The 95% CI for r^2 is `r quantile(pull(weather_2, r.squared), probs = c(0.025, 0.975))`.
+The 95% CI for log(b0*b1) `r quantile(pull(weather_2, log_betas), probs = c(0.025, 0.975))`.
 
 
 
