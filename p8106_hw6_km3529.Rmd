@@ -253,12 +253,15 @@ residuals =
   ggplot(aes(x = pred, y = resid)) +
   geom_point() +
   geom_smooth(se = FALSE) +
-  labs(title = "Residuals Against Fitted Values")
+  labs(
+    x = "Predicted birthweight", 
+    y = "Residuals", 
+    title = "Residuals Against Fitted Values")
 residuals
 
 ```
 
-There does not appear to be a distinct trend in the plot. There is a large cluster and a slight downward slope. 
+There does not appear to be a distinct trend in the plot. There is a large cluster between 1500 and 40000 but there does not appear to be an apparent trend. There is a slight downward slope for some of the points. However, most of the residuals are in the cluster. 
 
 
 Compare your model to two others:
@@ -289,6 +292,7 @@ fit_int %>%
 Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate.
 ```{r}
 cv_df = crossv_mc(baby_df, 100)
+
 cv_results = cv_df %>% 
   mutate(
     fit1 = map(train, ~lm(bwt ~ blength + gaweeks + mrace + fincome + smoken + blength*gaweeks, data = bwt_df)), 
@@ -396,8 +400,6 @@ Using the 5000 bootstrap estimates, identify the 2.5% and 97.5% quantiles to pro
 
 The 95% CI for r^2 is `r quantile(pull(weather_2, r.squared), probs = c(0.025, 0.975))`.
 The 95% CI for log(b0*b1) is `r quantile(pull(weather_2, log_betas), probs = c(0.025, 0.975))`.
-
-
 
 
 
